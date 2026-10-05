@@ -389,6 +389,8 @@ def main():
     global PASTA_PLANILHAS
     if args:
         PASTA_PLANILHAS = Path(args[0])
+    if os.environ.get("GITHUB_ACTIONS") and not LINKS_URL:
+        sys.exit("ERRO: o secret FCA_LINKS_URL nao esta cadastrado (Settings > Secrets and variables > Actions).")
     if LINKS_URL:
         PASTA_PLANILHAS = AQUI / "planilhas"
         baixar_planilhas(PASTA_PLANILHAS)
