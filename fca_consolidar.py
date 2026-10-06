@@ -221,6 +221,9 @@ def acao_arvore(linha, cols_arvore, hdr, produto_qrz_vapor):
 def ler_planilha(caminho, area_key, un_sigla, un_nome, proximo_id):
     ws = openpyxl.load_workbook(caminho, data_only=True).active
     linhas = list(ws.iter_rows(values_only=True))
+    # a planilha pode começar com linhas vazias (ex.: tabela a partir da linha 2): o cabeçalho é a 1ª linha preenchida
+    while linhas and all(v in (None, "") for v in linhas[0]):
+        linhas.pop(0)
     if len(linhas) < 2:
         return []
     hdr = [limpar(h) or "" for h in linhas[0]]
@@ -304,7 +307,7 @@ def consolidar(pasta):
         vistos[(area_key, sigla)] = p.name
         recs = ler_planilha(p, area_key, sigla, nome_un, len(registros) + 1)
         registros += recs
-        resumo.append((AREAS[area_key], sigla, len(recs), p.name))
+        resumo.append((AREAS[area_key], sigla, len(recs), p.name + "  [mais recente: " + max([r["d"] for r in recs if r["d"]] or ["-"]) + "]"))
     faltam = [f"{AREAS[a]} {u}" for a in AREAS for u in ("CLE", "QRZ")
               if (a, u) not in {(k, s) for (k, s) in vistos}]
     return registros, resumo, faltam
