@@ -27,6 +27,7 @@ import json
 import os
 import re
 import subprocess
+import time
 import sys
 import unicodedata
 from datetime import datetime
@@ -359,6 +360,43 @@ def publicar():
     print("  Publicado no GitHub." if p.returncode == 0 else f"  Falha no push:\n{p.stderr}")
 
 
+def aquecer_planilhas(links):
+    """Abre cada planilha no Excel online (navegador headless) antes de baixar.
+    O Forms só grava as respostas novas no Excel quando a planilha é aberta; sem isso o arquivo baixado fica defasado."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("  (playwright ausente: pulando a abertura das planilhas)")
+        return
+    try:
+        with sync_playwright() as p:
+            try:
+                b = p.chromium.launch(channel="chrome")
+            except Exception:
+                b = p.chromium.launch()
+            paginas = []
+            for nome, url in links.items():
+                try:
+                    pg = b.new_page(viewport={"width": 1400, "height": 900})
+                    pg.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    paginas.append(pg)
+                except Exception as e:
+                    print(f"  aviso: nao abriu {nome}: {str(e)[:80]}")
+            for pg in paginas:  # espera as planilhas carregarem e sincronizarem
+                pass
+            time.sleep(40)
+            for pg in paginas:
+                try:
+                    pg.close()
+                except Exception:
+                    pass
+            b.close()
+        print(f"  Planilhas abertas no Excel online: {len(paginas)}")
+        time.sleep(10)
+    except Exception as e:
+        print("  aviso: abertura das planilhas falhou:", str(e)[:120])
+
+
 def baixar_planilhas(pasta):
     """Modo automático: baixa as planilhas pelos links anônimos (JSON nome -> link)."""
     import urllib.request
@@ -368,6 +406,7 @@ def baixar_planilhas(pasta):
     for f in pasta.glob("*.xlsx"):
         f.unlink()
     links = requests.get(LINKS_URL, timeout=60).json() if LINKS_URL.startswith("http") else json.loads(LINKS_URL)
+    aquecer_planilhas(links)
     falhas = []
     for nome, url in links.items():
         ok = False

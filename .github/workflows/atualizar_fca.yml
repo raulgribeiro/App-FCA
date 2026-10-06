@@ -19,7 +19,7 @@ jobs:
           python-version: "3.11"
 
       - name: Dependencias
-        run: pip install openpyxl requests
+        run: pip install openpyxl requests playwright
 
       - name: Baixar planilhas e gerar dashboard
         env:
