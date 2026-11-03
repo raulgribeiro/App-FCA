@@ -650,6 +650,7 @@ window.addEventListener('message', function(e){
   const d = e.data;
   if(!d || d.type !== 'SET_THEME' || (d.theme !== 'light' && d.theme !== 'dark')) return;
   const claro = d.theme === 'light';
+  if(claro === document.body.classList.contains('light')) return; // já está nesse tema: evita redesenhar os gráficos
   document.body.classList.toggle('light', claro);
   try { localStorage.setItem(TEMA_KEY, claro ? 'claro' : 'escuro'); } catch(err) {}
   setThemeUI();
